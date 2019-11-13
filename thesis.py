@@ -351,10 +351,11 @@ def get_sentiment(file):
     positive = []
     negative = []
     neutral = []
-
     df = get_comments(file)
     df = df.sort_index(ascending=False)
     clean_text = preprocessing(df["comment"])
+    # 感情分類の手法はTextBlobを使っただけなので、変更可能
+    # 感情値に関しては出していない
     for comment in clean_text:
         text = TextBlob(comment)
         if text.sentiment.polarity > 0:
@@ -363,6 +364,15 @@ def get_sentiment(file):
             neutral.append(comment)
         elif text.sentiment.polarity < 0:
             negative.append(comment)
+
+    positive_per = len(positive) / len(clean_text) * 100
+    negative_per = len(negative) / len(clean_text) * 100
+    neutral_per = len(neutral) / len(clean_text) * 100
+    print("感情分析完了しました")
+    print("Positive comments percentage: {} %".format(positive_per))
+    print("Negative comments percentage: {} %".format(negative_per))
+    print("Neutral comments percentage: {} %".format(neutral_per))
+
     porarity = {"positive": positive, "negative": negative, "neutral": neutral}
     return porarity
 
