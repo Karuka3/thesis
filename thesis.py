@@ -194,17 +194,10 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
 
 
 def get_comments(file):
-    """
-    :param file: ファイル名
-    :return: comment list
-    """
-
     with open(file, "rb") as f:
         file_code = chardet.detect(f.read())["encoding"]
-
     with codecs.open(file, 'r', file_code, 'ignore') as f:
         comment = pd.read_csv(f)
-
     comment = comment.dropna(how="any")
     return comment
 
@@ -314,11 +307,20 @@ def confirmation():
             print(file_name)
 
 
-def read_pkl(file):
+def read_pkl(file, label=None, value=None):
     file_root = os.path.splitext(file)[0]
-    ndocs_file = file_root + "_ndocs.pkl"
-    w2n_file = file_root + "_w2n.pkl"
-    n2w_file = file_root + "_n2w.pkl"
+    if (label != None) & (value != None):
+        sentiment = True
+    else:
+        sentiment = False
+    if sentiment:
+        ndocs_file = file_root + "_" + label + "_ndocs.pkl"
+        w2n_file = file_root + "_" + label + "_w2n.pkl"
+        n2w_file = file_root + "_" + label + "_n2w.pkl"
+    else:
+        ndocs_file = file_root + "_ndocs.pkl"
+        w2n_file = file_root + "_w2n.pkl"
+        n2w_file = file_root + "_n2w.pkl"
     print("%s というファイルがあるか確認します" % ndocs_file)
 
     if os.path.isfile(ndocs_file):
@@ -328,9 +330,13 @@ def read_pkl(file):
         num2word = pkl.load(open(n2w_file, "rb"))
     else:
         print("%s というファイルはないので、作成します。" % ndocs_file)
-        df = get_comments(file)
-        df["comment"] = preprocessing(df["comment"])
-        docs = [get_words(comment) for comment in df["comment"]]
+        if sentiment:
+            text = value
+        else:
+            df = get_comments(file)
+            df = df.sort_index(ascending=False)
+            text = preprocessing(df["comment"])
+        docs = [get_words(comment) for comment in text]
         docs = list(filter(lambda x: x != [], docs))
         word2num, num2word = make_dictionary(docs)
         ndocs = [[word2num[w] for w in d] for d in docs]
@@ -341,28 +347,50 @@ def read_pkl(file):
     return ndocs, word2num, num2word
 
 
+def get_sentiment(file):
+    positive = []
+    negative = []
+    neutral = []
+
+    df = get_comments(file)
+    df = df.sort_index(ascending=False)
+    clean_text = preprocessing(df["comment"])
+    for comment in clean_text:
+        text = TextBlob(comment)
+        if text.sentiment.polarity > 0:
+            positive.append(comment)
+        elif text.sentiment.polarity == 0:
+            neutral.append(comment)
+        elif text.sentiment.polarity < 0:
+            negative.append(comment)
+    porarity = {"positive": positive, "negative": negative, "neutral": neutral}
+    return porarity
+
+
+def result(ndocs, word2num, num2word):
+    result = my_LDA(ndocs, word2num, K=5, trace=True)
+    print("After sampling\n", result["topics"][:10])
+    print("Top words\n", topwords(result["nkv"], num2word))
+
+
 def main():
     path = r"C:\Users\Kazuki\Paper\GraduateThesis\data"
     os.chdir(path)
     confirmation()
     delete(path)
-
     files = glob("*.csv")
 
-    # 一つだけで確認
-    file = "iPhoneX_comment.csv"
-    ndocs, word2num, num2word = read_pkl(file)
-    result = my_LDA(ndocs, word2num, K=5, trace=True)
-    print("After sampling\n", result["topics"][:10])
-    print("Top words\n", topwords(result["nkv"], num2word))
+    sentiment = False
 
-    """
     for file in files:
-        ndocs, word2num, num2word = read_pkl(file)
-        result = my_LDA(ndocs, word2num, K=5, trace=True)
-        print("After sampling\n", result["topics"][:10])
-        print("Top words\n", topwords(result["nkv"], num2word))
-    """
+        if sentiment:
+            porarity = get_sentiment(file)
+            for (label, data) in porarity.items():
+                ndocs, word2num, num2word = read_pkl(file, label, data)
+                result(ndocs, word2num, num2word)
+        else:
+            ndocs, word2num, num2word = read_pkl(file)
+            result(ndocs, word2num, num2word)
 
 
 if __name__ == "__main__":
