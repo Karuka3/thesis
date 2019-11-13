@@ -1,0 +1,4 @@
+# dataディレクトリ配下すべて除外
+data/
+Plan/
+Presentation/
