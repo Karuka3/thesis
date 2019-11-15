@@ -22,11 +22,16 @@ def text_preprocessing(text):
     return text
 
 
-def data_preprocessing(file):
+def data_preprocessing(file, start=None, end=None):
     df = get_data(file)
     df = df.sort_index(ascending=False)
     df = df.query('not date.str.endswith("hours ago")')
     df["date"] = pd.to_datetime(df["date"], format="%d %b %Y")
+    if end:
+        if start:
+            df = df[(df.date >= start) & (df.date <= end)]
+        else:
+            df = df[df.date <= end]
     text = text_preprocessing(df["comment"])
     return text
 
@@ -210,11 +215,11 @@ def get_data(file, date=False):
     return df
 
 
-def get_sentiment(file):
+def get_sentiment(file, start=None, end=None):
     positive = []
     negative = []
     neutral = []
-    clean_text = data_preprocessing(file)
+    clean_text = data_preprocessing(file, start, end)
     # 感情分類の手法はTextBlobを使っただけなので、変更可能
     # 感情値に関しては出していない
     for comment in clean_text:
@@ -343,7 +348,7 @@ def confirmation():
             print(file_name)
 
 
-def read_pkl(file, label=None, value=None):
+def read_pkl(file, label=None, value=None, start=None, end=None):
     ndocs_file, w2n_file, n2w_file = file_name(file, label)
     print("%s というファイルがあるか確認します" % ndocs_file)
     if os.path.isfile(ndocs_file):
@@ -357,7 +362,7 @@ def read_pkl(file, label=None, value=None):
         if (label != None) & (value != None):
             texts = value
         else:
-            texts = data_preprocessing(file)
+            texts = data_preprocessing(file, start, end)
         docs = [get_words(comment) for comment in texts]
         docs = list(filter(lambda x: x != [], docs))
         word2num, num2word = make_dictionary(docs)
@@ -389,12 +394,12 @@ def result(ndocs, word2num, num2word):
     return result
 
 
-def read_result(file, lda=False, label=None, value=None):
+def read_result(file, lda=False, label=None, value=None, start=None, end=None):
     if lda:
-        ndocs, word2num, num2word = read_pkl(file, label, value)
+        ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
         result(ndocs, word2num, num2word)
     else:
-        ndocs, word2num, num2word = read_pkl(file, label, value)
+        ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
 
 
 def main():
@@ -406,17 +411,20 @@ def main():
 
     sentiment = False
     lda = True
+    release_date = datetime.datetime(2017, 11, 3)
+    anouncement_date = datetime.datetime(2017, 9, 12)
+
     """
     for file in files:
         if sentiment:
-            porarity = get_sentiment(file)
+            porarity = get_sentiment(file,release_date)
             for (label, value) in porarity.items():
                 read_result(file, lda, label, value)
         else:
             read_result(file, lda, label=None, value=None)
     """
     file = "iPhoneX_comment.csv"
-    read_result(file, lda)
+    read_result(file, lda, None, None, None, release_date)
 
 
 if __name__ == "__main__":
