@@ -5,6 +5,9 @@ import pickle as pkl
 from tqdm import tqdm
 from glob import glob
 from textblob import TextBlob
+from wordcloud import WordCloud
+from PIL import Image
+import wordcloud
 import MeCab
 import nltk
 import chardet
@@ -317,7 +320,7 @@ def my_LDA(docs, word2num, K=5, Iter=1000, alpha=0.1, beta=0.1, trace=False, int
 def topwords(nkv, num2word, t=10):
     sphi = np.argsort(nkv, axis=1).T[::-1].tolist()
     topwords = [[num2word[i] for i in w] for w in sphi]
-    return pd.DataFrame(topwords).iloc[:10, :]
+    return pd.DataFrame(topwords).iloc[:t, :]
 
 
 def delete(path):
@@ -387,23 +390,46 @@ def file_name(file, label=None):
     return ndocs_file, w2n_file, n2w_file
 
 
-def result(ndocs, word2num, num2word):
-    result = my_LDA(ndocs, word2num, K=5, trace=True)
+def result(ndocs, word2num, num2word, K=5, Iter=1000, top=10, img_path=None):
+    result = my_LDA(ndocs, word2num, K, Iter=Iter, trace=True)
+    top_words = topwords(result["nkv"], num2word, top)
     print("After sampling\n", result["topics"][:10])
-    print("Top words\n", topwords(result["nkv"], num2word))
+    print("Top words\n", top_words)
+    for i in range(K):
+        word_cloud(top_words[i], img_path)
+        plt.title("Topic{}".format(i + 1), fontsize=28)
+        plt.show()
     return result
 
 
-def read_result(file, lda=False, label=None, value=None, start=None, end=None):
+def read_result(file, lda=False, label=None, value=None, start=None, end=None, img_path=None):
     if lda:
+        K = 5
+        Iter = 100
+        top = 30
         ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
-        result(ndocs, word2num, num2word)
+        result(ndocs, word2num, num2word, K, Iter, top, img_path)
     else:
         ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
 
 
+def word_cloud(words, img_path=None):
+    mask = None
+    if img_path:
+        img = Image.open(img_path)
+        mask = np.array(img)
+    texts = " ".join(words)
+    wordcloud = WordCloud(background_color="white", font_path="C:/WINDOWS/Fonts/UDDigiKyokashoN-B.ttc",
+                          width=600, height=400, mask=mask, contour_width=2, contour_color='steelblue').generate(texts)
+    wordcloud.to_image()
+    plt.imshow(wordcloud)
+    plt.axis("off")
+    # plt.show()
+
+
 def main():
-    path = r"C:\Users\Kazuki\Paper\GraduateThesis\data"
+    path = r"C:\Users\Kazuki\thesis\data"
+    img_path = r"C:\Users\Kazuki\thesis\data\comment.png"
     os.chdir(path)
     # confirmation()
     delete(path)
@@ -419,12 +445,12 @@ def main():
         if sentiment:
             porarity = get_sentiment(file,release_date)
             for (label, value) in porarity.items():
-                read_result(file, lda, label, value)
+                read_result(file, lda, label, value, img_path)
         else:
-            read_result(file, lda, label=None, value=None)
+            read_result(file, lda, label=None, value=None, img_path)
     """
     file = "iPhoneX_comment.csv"
-    read_result(file, lda, None, None, None, release_date)
+    read_result(file, lda, None, None, None, None)
 
 
 if __name__ == "__main__":
