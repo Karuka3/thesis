@@ -2,6 +2,7 @@
 data/
 Plan/
 Presentation/
+result/
 lda.py
 Tex/thesis.aux
 Tex/thesis.log
