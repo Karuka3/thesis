@@ -352,7 +352,7 @@ def confirmation():
 
 
 def read_pkl(file, label=None, value=None, start=None, end=None):
-    ndocs_file, w2n_file, n2w_file = file_name(file, label)
+    ndocs_file, w2n_file, n2w_file, root = file_name(file, label)
     print("%s というファイルがあるか確認します" % ndocs_file)
     if os.path.isfile(ndocs_file):
         print("%s というファイルはありました" % ndocs_file)
@@ -374,7 +374,7 @@ def read_pkl(file, label=None, value=None, start=None, end=None):
         pkl.dump(word2num, open(w2n_file, "wb"))
         pkl.dump(num2word, open(n2w_file, "wb"))
         print("Complete!!")
-    return ndocs, word2num, num2word
+    return ndocs, word2num, num2word, root
 
 
 def file_name(file, label=None):
@@ -383,21 +383,25 @@ def file_name(file, label=None):
         ndocs_file = file_root + "_" + label + "_ndocs.pkl"
         w2n_file = file_root + "_" + label + "_w2n.pkl"
         n2w_file = file_root + "_" + label + "_n2w.pkl"
+        root = file_root + "_" + label
     else:
         ndocs_file = file_root + "_ndocs.pkl"
         w2n_file = file_root + "_w2n.pkl"
         n2w_file = file_root + "_n2w.pkl"
-    return ndocs_file, w2n_file, n2w_file
+        root = file_root
+    return ndocs_file, w2n_file, n2w_file, root
 
 
-def result(ndocs, word2num, num2word, K=5, Iter=1000, top=10, img_path=None):
+def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=None):
     result = my_LDA(ndocs, word2num, K, Iter=Iter, trace=True)
     top_words = topwords(result["nkv"], num2word, top)
     print("After sampling\n", result["topics"][:10])
     print("Top words\n", top_words)
+    os.chdir(r"C:\Users\Kazuki\thesis\result")
     for i in range(K):
-        word_cloud(top_words[i], img_path)
-        plt.title("Topic{}".format(i + 1), fontsize=28)
+        wordcloud = word_cloud(top_words[i], img_path)
+        plt.title(root + " Topic{}".format(i + 1), fontsize=28)
+        wordcloud.to_file(root + " Topic{}".format(i + 1) + ".png")
         plt.show()
     return result
 
@@ -407,10 +411,12 @@ def read_result(file, lda=False, label=None, value=None, start=None, end=None, i
         K = 5
         Iter = 100
         top = 30
-        ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
-        result(ndocs, word2num, num2word, K, Iter, top, img_path)
+        ndocs, word2num, num2word, root = read_pkl(
+            file, label, value, start, end)
+        result(ndocs, word2num, num2word, root, K, Iter, top, img_path)
     else:
-        ndocs, word2num, num2word = read_pkl(file, label, value, start, end)
+        ndocs, word2num, num2word, root = read_pkl(
+            file, label, value, start, end)
 
 
 def word_cloud(words, img_path=None):
@@ -420,11 +426,11 @@ def word_cloud(words, img_path=None):
         mask = np.array(img)
     texts = " ".join(words)
     wordcloud = WordCloud(background_color="white", font_path="C:/WINDOWS/Fonts/UDDigiKyokashoN-B.ttc",
-                          width=600, height=400, mask=mask, contour_width=2, contour_color='steelblue').generate(texts)
+                          width=1000, height=800, mask=mask, contour_width=2, contour_color='steelblue').generate(texts)
     wordcloud.to_image()
     plt.imshow(wordcloud)
     plt.axis("off")
-    # plt.show()
+    return wordcloud
 
 
 def main():
