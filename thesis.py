@@ -184,12 +184,16 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
     ``: opening quotation mark
         ` ``
     """
-
     words = []
     if language == "English":
         text = re.subn(r"\W", " ", text)[0]
         tokens = nltk.word_tokenize(text)
         stop_words = nltk.corpus.stopwords.words("english")
+        # stopwordsを恣意的に追加
+        append_word = ["u", "iphone", "phone",
+                       "dont", "didnt", "x", "s0", "apple"]
+        for stop in append_word:
+            stop_words.append(stop)
         change_tokens = [word for word in tokens if word not in stop_words]
         tagged = nltk.pos_tag(change_tokens)
 
@@ -207,6 +211,10 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
             if i[1].split(",")[0] in conditions:
                 words.append(i[0])
     return words
+
+
+def stopwords(text, stop_words):
+    pass
 
 
 def get_data(file, date=False):
