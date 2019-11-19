@@ -190,13 +190,12 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
         tokens = nltk.word_tokenize(text)
         stop_words = nltk.corpus.stopwords.words("english")
         # stopwordsを恣意的に追加
-        append_word = ["u", "iphone", "phone",
-                       "dont", "didnt", "x", "s0", "apple"]
+        append_word = ["im", "u", "iphone", "phone", "apple",
+                       "dont", "doesnt", "didnt", "x", "s0", "a0", "lol"]
         for stop in append_word:
             stop_words.append(stop)
         change_tokens = [word for word in tokens if word not in stop_words]
         tagged = nltk.pos_tag(change_tokens)
-
         for tag in tagged:
             if tag[1].split(",")[0] in conditions:
                 words.append(tag[0])
@@ -206,15 +205,10 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
         text = re.subn(r"\W", "", text)[0]
         tokens = t.parse(text)
         tokens = [line.split("\t") for line in tokens.split("\n")][:-2]
-
         for i in tokens:
             if i[1].split(",")[0] in conditions:
                 words.append(i[0])
     return words
-
-
-def stopwords(text, stop_words):
-    pass
 
 
 def get_data(file, date=False):
@@ -408,23 +402,20 @@ def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=Non
     os.chdir(r"C:\Users\Kazuki\thesis\result")
     for i in range(K):
         wordcloud = word_cloud(top_words[i], img_path)
-        plt.title(root + " Topic{}".format(i + 1), fontsize=28)
+        plt.title(root + " Topic{}".format(i + 1), fontsize=24)
         wordcloud.to_file(root + " Topic{}".format(i + 1) + ".png")
         plt.show()
+    os.chdir(r"C:\Users\Kazuki\thesis\data")
     return result
 
 
 def read_result(file, lda=False, label=None, value=None, start=None, end=None, img_path=None):
+    ndocs, word2num, num2word, root = read_pkl(file, label, value, start, end)
     if lda:
-        K = 5
-        Iter = 100
+        K = 10
+        Iter = 1000
         top = 30
-        ndocs, word2num, num2word, root = read_pkl(
-            file, label, value, start, end)
         result(ndocs, word2num, num2word, root, K, Iter, top, img_path)
-    else:
-        ndocs, word2num, num2word, root = read_pkl(
-            file, label, value, start, end)
 
 
 def word_cloud(words, img_path=None):
@@ -445,11 +436,11 @@ def main():
     path = r"C:\Users\Kazuki\thesis\data"
     img_path = r"C:\Users\Kazuki\thesis\data\comment.png"
     os.chdir(path)
-    # confirmation()
+    confirmation()
     delete(path)
-    files = glob("*.csv")
 
-    sentiment = False
+    files = glob("*.csv")
+    sentiment = True
     lda = True
     release_date = datetime.datetime(2017, 11, 3)
     anouncement_date = datetime.datetime(2017, 9, 12)
@@ -464,7 +455,12 @@ def main():
             read_result(file, lda, label=None, value=None, img_path)
     """
     file = "iPhoneX_comment.csv"
-    read_result(file, lda, None, None, None, None)
+    if sentiment:
+        porarity = get_sentiment(file)
+        for (label, value) in porarity.items():
+            read_result(file, lda, label, value)
+    else:
+        read_result(file, lda, label=None, value=None)
 
 
 if __name__ == "__main__":
