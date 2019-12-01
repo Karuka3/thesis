@@ -3,6 +3,7 @@ data/
 Plan/
 Presentation/
 result/
+result_all/
 cite/
 lda.py
 Tex/thesis.aux
