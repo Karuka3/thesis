@@ -28,7 +28,7 @@ def text_preprocessing(text):
 def data_preprocessing(file, start=None, end=None):
     df = get_data(file)
     df = df.sort_index(ascending=False)
-    df = df.query('not date.str.endswith("hours ago")')
+    df = df.query('not date.str.endswith("ago")')
     df["date"] = pd.to_datetime(df["date"], format="%d %b %Y")
     if end:
         if start:
@@ -36,6 +36,7 @@ def data_preprocessing(file, start=None, end=None):
         else:
             df = df[df.date <= end]
     text = text_preprocessing(df["comment"])
+    print(len(text))
     return text
 
 
@@ -221,30 +222,41 @@ def get_data(file, date=False):
 
 
 def get_sentiment(file, start=None, end=None):
-    positive = []
-    negative = []
-    neutral = []
+    positive = {"data":[],"polarity":[]}
+    negative = {"data":[],"polarity":[]}
+    neutral = {"data":[],"polarity":[]}
     clean_text = data_preprocessing(file, start, end)
     # 感情分類の手法はTextBlobを使っただけなので、変更可能
     # 感情値に関しては出していない
     for comment in clean_text:
         text = TextBlob(comment)
         if text.sentiment.polarity > 0:
-            positive.append(comment)
+            positive["data"].append(comment)
+            positive["polarity"].append(text.sentiment.polarity)
         elif text.sentiment.polarity == 0:
-            neutral.append(comment)
+            neutral["data"].append(comment)
+            neutral["polarity"].append(text.sentiment.polarity)
         elif text.sentiment.polarity < 0:
-            negative.append(comment)
+            negative["data"].append(comment)
+            negative["polarity"].append(text.sentiment.polarity)
 
-    positive_per = len(positive) / len(clean_text) * 100
-    negative_per = len(negative) / len(clean_text) * 100
-    neutral_per = len(neutral) / len(clean_text) * 100
+    positive_per = len(positive["data"]) / len(clean_text) * 100
+    negative_per = len(negative["data"]) / len(clean_text) * 100
+    neutral_per = len(neutral["data"]) / len(clean_text) * 100
+    positive_pol = sum(positive["polarity"])/len(positive["polarity"])
+    negative_pol = sum(negative["polarity"])/len(negative["polarity"])
+    neutral_pol = sum(neutral["polarity"])/len(neutral["polarity"])
+
     print("感情分析完了しました")
     print("Positive comments percentage: {} %".format(positive_per))
     print("Negative comments percentage: {} %".format(negative_per))
     print("Neutral comments percentage: {} %".format(neutral_per))
 
-    porarity = {"positive": positive, "negative": negative, "neutral": neutral}
+    print("Positive polaritys : {} ".format(positive_pol))
+    print("Negative polaritys : {} ".format(negative_pol))
+    print("Neutral polaritys : {} ".format(neutral_pol))
+
+    porarity = {"positive": positive["data"], "negative": negative["data"], "neutral": neutral["data"]}
     return porarity
 
 
@@ -306,7 +318,7 @@ def my_LDA(docs, word2num, K=5, Iter=1000, alpha=0.1, beta=0.1, trace=False, int
                 ndk[i, new_z] += 1
                 nkv[new_z, v] += 1
                 nk[new_z] += 1
-        if ite % inter == 0:
+        if ite % inter == 0 and trace == True:
             chain.append(move)
     save = {"topics": topics, "nkv": nkv, "ndk": ndk, "nk": nk, "nd": nd}
     if trace:
@@ -395,7 +407,7 @@ def file_name(file, label=None):
 
 
 def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=None):
-    result = my_LDA(ndocs, word2num, K, Iter=Iter, trace=True)
+    result = my_LDA(ndocs, word2num, K, Iter=Iter, trace=False)
     top_words = topwords(result["nkv"], num2word, top)
     print("After sampling\n", result["topics"][:10])
     print("Top words\n", top_words)
@@ -404,7 +416,7 @@ def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=Non
         wordcloud = word_cloud(top_words[i], img_path)
         plt.title(root + " Topic{}".format(i + 1), fontsize=24)
         wordcloud.to_file(root + " Topic{}".format(i + 1) + ".png")
-        plt.show()
+        #plt.show()
     os.chdir(r"C:\Users\Kazuki\thesis\data")
     return result
 
@@ -412,9 +424,9 @@ def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=Non
 def read_result(file, lda=False, label=None, value=None, start=None, end=None, img_path=None):
     ndocs, word2num, num2word, root = read_pkl(file, label, value, start, end)
     if lda:
-        K = 10
+        K = 5
         Iter = 1000
-        top = 30
+        top = 15
         result(ndocs, word2num, num2word, root, K, Iter, top, img_path)
 
 
@@ -436,31 +448,23 @@ def main():
     path = r"C:\Users\Kazuki\thesis\data"
     img_path = r"C:\Users\Kazuki\thesis\data\comment.png"
     os.chdir(path)
-    confirmation()
-    delete(path)
+    #confirmation()
+    #delete(path)
 
     files = glob("*.csv")
     sentiment = True
-    lda = True
-    release_date = datetime.datetime(2017, 11, 3)
-    anouncement_date = datetime.datetime(2017, 9, 12)
+    lda = False
+    anouncement = datetime.datetime(2007, 1, 9)
+    release = datetime.datetime(2007, 6, 29)
 
-    """
+    #file = "iPhone_comment.csv"
     for file in files:
         if sentiment:
-            porarity = get_sentiment(file,release_date)
+            porarity = get_sentiment(file)
             for (label, value) in porarity.items():
-                read_result(file, lda, label, value, img_path)
+                read_result(file, lda, label, value)
         else:
-            read_result(file, lda, label=None, value=None, img_path)
-    """
-    file = "iPhoneX_comment.csv"
-    if sentiment:
-        porarity = get_sentiment(file)
-        for (label, value) in porarity.items():
-            read_result(file, lda, label, value)
-    else:
-        read_result(file, lda, label=None, value=None)
+            read_result(file, lda, label=None, value=None)
 
 
 if __name__ == "__main__":
