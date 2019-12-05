@@ -1,0 +1,12 @@
+Positive comments percentage: 21.58 %
+Negative comments percentage: 21.43 %
+Neutral comments percentage: 56.989999999999995 %
+Positive polaritys : 0.07266193099955603 
+Negative polaritys : -0.07019984071715332
+
+Positive comments percentage: 21.529999999999998 %
+Negative comments percentage: 22.13 %
+Neutral comments percentage: 56.34 %
+Positive polaritys : 0.0708208043692419
+Negative polaritys : -0.07186780950068442
+
