@@ -26,7 +26,7 @@ class RandomWords(object):
         word = wordlist[random.randint(0, 10)]
         return word
 
-    def get_random_words(self, includePartOfSpeech=None, excludePartOfSpeech=None, minLength=1, maxLength=10, limit=10):
+    def get_random_words(self, includePartOfSpeech=None, excludePartOfSpeech=None, minLength=2, maxLength=20, limit=10):
         """
         Returns a single random word
         Args:
