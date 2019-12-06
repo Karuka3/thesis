@@ -10,3 +10,50 @@ Neutral comments percentage: 56.34 %
 Positive polaritys : 0.0708208043692419
 Negative polaritys : -0.07186780950068442
 
+Positive comments percentage: 21.15 %
+Negative comments percentage: 21.51 %
+Neutral comments percentage: 57.34 %
+Positive polaritys : 0.07049213768870032
+Negative polaritys : -0.07223037639675148
+
+Positive comments percentage: 20.26 %
+Negative comments percentage: 21.86 %
+Neutral comments percentage: 57.879999999999995 %
+Positive polaritys : 0.0695942356254857
+Negative polaritys : -0.07267602853165371
+
+Positive comments percentage: 20.8 %
+Negative comments percentage: 21.13 %
+Neutral comments percentage: 58.07 %
+Positive polaritys : 0.06978253930560188
+Negative polaritys : -0.07069127815101567
+
+Positive comments percentage: 21.57 %
+Negative comments percentage: 21.27 %
+Neutral comments percentage: 57.16 %
+Positive polaritys : 0.0736929349192475
+Negative polaritys : -0.07128114257733019
+
+Positive comments percentage: 21.029999999999998 %
+Negative comments percentage: 21.65 %
+Neutral comments percentage: 57.32000000000001 %
+Positive polaritys : 0.0722532912180413
+Negative polaritys : -0.07139026618751623
+
+Positive comments percentage: 21.240000000000002 %
+Negative comments percentage: 22.31 %
+Neutral comments percentage: 56.45 %
+Positive polaritys : 0.07106033463527216
+Negative polaritys : -0.07248004648129665
+
+Positive comments percentage: 21.0 %
+Negative comments percentage: 21.17 %
+Neutral comments percentage: 57.830000000000005 %
+Positive polaritys : 0.07049055817654579 
+Negative polaritys : -0.06836904977198748
+
+Positive comments percentage: 21.37 %
+Negative comments percentage: 21.759999999999998 %
+Neutral comments percentage: 56.87 %
+Positive polaritys : 0.07245164647389653
+Negative polaritys : -0.07332232627557646
