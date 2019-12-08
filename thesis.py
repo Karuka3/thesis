@@ -6,6 +6,8 @@ from tqdm import tqdm
 from glob import glob
 from textblob import TextBlob
 from wordcloud import WordCloud
+from nltk.corpus import words
+from nltk.corpus import wordnet
 from PIL import Image
 import wordcloud
 import MeCab
@@ -36,7 +38,6 @@ def data_preprocessing(file, start=None, end=None):
         else:
             df = df[df.date <= end]
     text = text_preprocessing(df["comment"])
-    print(len(text))
     return text
 
 
@@ -46,7 +47,6 @@ def get_words(text, conditions=["FW", "JJ", "JJR", "JJS", "LS", "NN", "NNP", "RB
     :param text: text data
     :param language: you can select language in [English,Japanese]
     :param conditions: you can select word class in Japanese or English
-    :param wordcloud: you choice to print wordcloud
     $: dollar
         $ -$ --$ A$ C$ HK$ M$ NZ$ S$ U.S.$ US$
     '': closing quotation mark
@@ -222,9 +222,9 @@ def get_data(file, date=False):
 
 
 def get_sentiment(file, start=None, end=None):
-    positive = {"data":[],"polarity":[]}
-    negative = {"data":[],"polarity":[]}
-    neutral = {"data":[],"polarity":[]}
+    positive = {"data": [], "polarity": []}
+    negative = {"data": [], "polarity": []}
+    neutral = {"data": [], "polarity": []}
     clean_text = data_preprocessing(file, start, end)
     # 感情分類の手法はTextBlobを使っただけなので、変更可能
     # 感情値に関しては出していない
@@ -248,16 +248,17 @@ def get_sentiment(file, start=None, end=None):
     neutral_pol = sum(neutral["polarity"])/len(neutral["polarity"])
 
     print("感情分析完了しました")
-    print("Positive comments percentage: {} %".format(positive_per))
-    print("Negative comments percentage: {} %".format(negative_per))
-    print("Neutral comments percentage: {} %".format(neutral_per))
+    #print("Positive comments percentage: {} %".format(positive_per))
+    #print("Negative comments percentage: {} %".format(negative_per))
+    #print("Neutral comments percentage: {} %".format(neutral_per))
 
     print("Positive polaritys : {} ".format(positive_pol))
     print("Negative polaritys : {} ".format(negative_pol))
     print("Neutral polaritys : {} ".format(neutral_pol))
 
-    porarity = {"positive": positive["data"], "negative": negative["data"], "neutral": neutral["data"]}
-    return porarity
+    polarity = {"positive": positive,
+                "negative": negative, "neutral": neutral}
+    return polarity
 
 
 def make_dictionary(docs):
@@ -416,7 +417,7 @@ def result(ndocs, word2num, num2word, root, K=5, Iter=1000, top=10, img_path=Non
         wordcloud = word_cloud(top_words[i], img_path)
         plt.title(root + " Topic{}".format(i + 1), fontsize=24)
         wordcloud.to_file(root + " Topic{}".format(i + 1) + ".png")
-        #plt.show()
+        # plt.show()
     os.chdir(r"C:\Users\Kazuki\thesis\data")
     return result
 
@@ -448,9 +449,8 @@ def main():
     path = r"C:\Users\Kazuki\thesis\data"
     img_path = r"C:\Users\Kazuki\thesis\data\comment.png"
     os.chdir(path)
-    #confirmation()
-    #delete(path)
-
+    # confirmation()
+    # delete(path)
     files = glob("*.csv")
     sentiment = True
     lda = False
@@ -458,6 +458,7 @@ def main():
     release = datetime.datetime(2007, 6, 29)
 
     #file = "iPhone_comment.csv"
+    """
     for file in files:
         if sentiment:
             porarity = get_sentiment(file)
@@ -465,6 +466,39 @@ def main():
                 read_result(file, lda, label, value)
         else:
             read_result(file, lda, label=None, value=None)
+    """
+    positive_counts = []
+    negative_counts = []
+    neutral_counts = []
+    total_counts = []
+    total_pols = []
+    for file in files:
+        file_root = os.path.splitext(file)[0]
+        print("File Name: {}".format(file_root))
+        polarity = get_sentiment(file)
+        positive_count = len(polarity["positive"]["data"])
+        negative_count = len(polarity["negative"]["data"])
+        neutral_count = len(polarity["neutral"]["data"])
+        total = positive_count + negative_count + neutral_count
+        positive_pol = polarity["positive"]["polarity"]
+        negative_pol = polarity["negative"]["polarity"]
+        neutral_pol = polarity["neutral"]["polarity"]
+        polaritys = positive_pol + negative_pol + neutral_pol
+        plt.hist(polaritys, bins=50)
+        plt.title("{}".format(file_root))
+        # plt.show()
+        print("Positive comments : {} ".format(positive_count))
+        print("Negative comments : {} ".format(negative_count))
+        print("Neutral comments : {} ".format(neutral_count))
+        print("Total : {} ".format(total))
+        positive_counts.append(positive_count)
+        negative_counts.append(negative_count)
+        neutral_counts.append(neutral_count)
+        total_counts.append(total)
+        total_pols += polaritys
+    plt.hist(total_pols, bins=50)
+    plt.title("Total")
+    plt.show()
 
 
 if __name__ == "__main__":

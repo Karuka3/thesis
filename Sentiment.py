@@ -43,12 +43,8 @@ def get_sentiment(docs):
 def main():
     path = r"C:\Users\Kazuki\thesis\data"
     os.chdir(path)
-    random.seed(719)
-    """
-    file = "Tweets.csv"
-    data = pd.read_csv(file)
-    texts = data["text"]
-    """
+    random.seed(726)
+
     r = RandomWords()
     randomcount = [random.randint(3, 150) for i in range(10000)]
     docs = []
