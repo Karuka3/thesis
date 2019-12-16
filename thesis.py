@@ -17,7 +17,7 @@ import codecs
 import re
 import os
 import datetime
-
+from plot import Plot
 
 def text_preprocessing(text):
     no_space = re.compile(r"[.;:!\'?,\"()\[\]]")
@@ -472,6 +472,8 @@ def main():
     neutral_counts = []
     total_counts = []
     total_pols = []
+    positive_pols = []
+    negative_pols = []
     for file in files:
         file_root = os.path.splitext(file)[0]
         print("File Name: {}".format(file_root))
@@ -482,11 +484,16 @@ def main():
         total = positive_count + negative_count + neutral_count
         positive_pol = polarity["positive"]["polarity"]
         negative_pol = polarity["negative"]["polarity"]
-        neutral_pol = polarity["neutral"]["polarity"]
-        polaritys = positive_pol + negative_pol + neutral_pol
+        polaritys = positive_pol + negative_pol
         plt.hist(polaritys, bins=50)
         plt.title("{}".format(file_root))
-        # plt.show()
+        #plt.show()
+        plt.hist(positive_pol,bins=25)
+        plt.title("{} Positive".format(file_root))
+        #plt.show()
+        plt.hist(negative_pol,bins=25)
+        plt.title("{} Negative".format(file_root))
+        #plt.show()
         print("Positive comments : {} ".format(positive_count))
         print("Negative comments : {} ".format(negative_count))
         print("Neutral comments : {} ".format(neutral_count))
@@ -494,11 +501,24 @@ def main():
         positive_counts.append(positive_count)
         negative_counts.append(negative_count)
         neutral_counts.append(neutral_count)
-        total_counts.append(total)
+        total_counts.append([positive_count,negative_count,neutral_count])
         total_pols += polaritys
+        positive_pols += positive_pol
+        negative_pols += negative_pol
+    pl = Plot()
+    x = np.sum(total_counts,axis=0)
+    pl.dirichlet(x)
+
     plt.hist(total_pols, bins=50)
     plt.title("Total")
     plt.show()
+    plt.hist(positive_pols,bins=30)
+    plt.title("Positive")
+    #plt.show()
+    plt.hist(negative_pols,bins=30)
+    plt.title("Negative")
+    #plt.show()
+
 
 
 if __name__ == "__main__":
