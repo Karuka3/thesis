@@ -9,6 +9,7 @@ from wordcloud import WordCloud
 from nltk.corpus import words
 from nltk.corpus import wordnet
 from PIL import Image
+from scipy.stats import chisquare
 import wordcloud
 import MeCab
 import nltk
@@ -247,7 +248,6 @@ def get_sentiment(file, start=None, end=None):
     negative_pol = sum(negative["polarity"])/len(negative["polarity"])
     neutral_pol = sum(neutral["polarity"])/len(neutral["polarity"])
 
-    print("感情分析完了しました")
     #print("Positive comments percentage: {} %".format(positive_per))
     #print("Negative comments percentage: {} %".format(negative_per))
     #print("Neutral comments percentage: {} %".format(neutral_per))
@@ -487,15 +487,19 @@ def main():
         plt.hist(polaritys, bins=50)
         plt.title("{}".format(file_root))
         # plt.show()
-        print("Positive comments : {} ".format(positive_count))
-        print("Negative comments : {} ".format(negative_count))
-        print("Neutral comments : {} ".format(neutral_count))
-        print("Total : {} ".format(total))
+        #print("Positive comments : {} ".format(positive_count))
+        #print("Negative comments : {} ".format(negative_count))
+        #print("Neutral comments : {} ".format(neutral_count))
+        #print("Total : {} ".format(total))
         positive_counts.append(positive_count)
         negative_counts.append(negative_count)
         neutral_counts.append(neutral_count)
         total_counts.append(total)
         total_pols += polaritys
+
+    statisic = chisquare([sum(positive_counts), sum(negative_counts), sum(neutral_counts)], f_exp=[
+        sum(total_counts)*21.15/100, sum(total_counts)*21.62/100, sum(total_counts)*57.23/100])
+    print(statisic)
     plt.hist(total_pols, bins=50)
     plt.title("Total")
     plt.show()
