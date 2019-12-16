@@ -5,6 +5,7 @@ Presentation/
 result/
 result_all/
 cite/
+newdata/
 lda.py
 Tex/thesis.aux
 Tex/thesis.log

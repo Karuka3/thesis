@@ -17,7 +17,8 @@ import chardet
 import codecs
 import re
 import os
-import datetime
+from datetime import datetime, timedelta
+from plot import Plot
 
 
 def text_preprocessing(text):
@@ -28,17 +29,16 @@ def text_preprocessing(text):
     return text
 
 
-def data_preprocessing(file, start=None, end=None):
-    df = get_data(file)
-    df = df.sort_index(ascending=False)
-    df = df.query('not date.str.endswith("ago")')
-    df["date"] = pd.to_datetime(df["date"], format="%d %b %Y")
+def data_preprocessing(df, start=None, end=None):
+    data = df.sort_index(ascending=False)
+    #data = df.query('not date.str.endswith("ago")')
+    #data["date"] = pd.to_datetime(data["date"], format="%d %b %Y")
     if end:
         if start:
-            df = df[(df.date >= start) & (df.date <= end)]
+            data = data[(data.date >= start) & (data.date <= end)]
         else:
-            df = df[df.date <= end]
-    text = text_preprocessing(df["comment"])
+            data = data[data.date <= end]
+    text = text_preprocessing(data["comment"])
     return text
 
 
@@ -222,11 +222,11 @@ def get_data(file, date=False):
     return df
 
 
-def get_sentiment(file, start=None, end=None):
-    positive = {"data": [], "polarity": []}
-    negative = {"data": [], "polarity": []}
-    neutral = {"data": [], "polarity": []}
-    clean_text = data_preprocessing(file, start, end)
+def get_sentiment(df, start=None, end=None):
+    positive = {"data": [], "polarity": [], "percentage": []}
+    negative = {"data": [], "polarity": [], "percentage": []}
+    neutral = {"data": [], "polarity": [], "percentage": []}
+    clean_text = data_preprocessing(df, start, end)
     # 感情分類の手法はTextBlobを使っただけなので、変更可能
     # 感情値に関しては出していない
     for comment in clean_text:
@@ -240,22 +240,32 @@ def get_sentiment(file, start=None, end=None):
         elif text.sentiment.polarity < 0:
             negative["data"].append(comment)
             negative["polarity"].append(text.sentiment.polarity)
+    if clean_text:
+        if len(positive["polarity"]) != 0:
+            positive_pol = sum(positive["polarity"]) / \
+                len(positive["polarity"])
+        else:
+            positive_pol = 0
+        if len(negative["polarity"]) != 0:
+            negative_pol = sum(negative["polarity"])/len(negative["polarity"])
+        else:
+            negative_pol = 0
+        positive_per = len(positive["data"]) / len(clean_text) * 100
+        negative_per = len(negative["data"]) / len(clean_text) * 100
+        neutral_per = len(neutral["data"]) / len(clean_text) * 100
+        print("Positive comments percentage: {} %".format(positive_per))
+        print("Negative comments percentage: {} %".format(negative_per))
+        print("Neutral comments percentage: {} %".format(neutral_per))
+        print("Positive polaritys : {} ".format(positive_pol))
+        print("Negative polaritys : {} ".format(negative_pol))
+    else:
+        positive_per = None
+        negative_per = None
+        neutral_per = None
 
-    positive_per = len(positive["data"]) / len(clean_text) * 100
-    negative_per = len(negative["data"]) / len(clean_text) * 100
-    neutral_per = len(neutral["data"]) / len(clean_text) * 100
-    positive_pol = sum(positive["polarity"])/len(positive["polarity"])
-    negative_pol = sum(negative["polarity"])/len(negative["polarity"])
-    neutral_pol = sum(neutral["polarity"])/len(neutral["polarity"])
-
-    #print("Positive comments percentage: {} %".format(positive_per))
-    #print("Negative comments percentage: {} %".format(negative_per))
-    #print("Neutral comments percentage: {} %".format(neutral_per))
-
-    print("Positive polaritys : {} ".format(positive_pol))
-    print("Negative polaritys : {} ".format(negative_pol))
-    print("Neutral polaritys : {} ".format(neutral_pol))
-
+    positive["percentage"].append(positive_per)
+    negative["percentage"].append(negative_per)
+    neutral["percentage"].append(neutral_per)
     polarity = {"positive": positive,
                 "negative": negative, "neutral": neutral}
     return polarity
@@ -446,16 +456,19 @@ def word_cloud(words, img_path=None):
 
 
 def main():
+    local = os.getcwd()
     path = r"C:\Users\Kazuki\thesis\data"
-    img_path = r"C:\Users\Kazuki\thesis\data\comment.png"
     os.chdir(path)
     # confirmation()
     # delete(path)
     files = glob("*.csv")
     sentiment = True
     lda = False
-    anouncement = datetime.datetime(2007, 1, 9)
-    release = datetime.datetime(2007, 6, 29)
+    sta = False
+    plot = False
+    hist = False
+    pol = False
+    count = True
 
     #file = "iPhone_comment.csv"
     """
@@ -467,42 +480,88 @@ def main():
         else:
             read_result(file, lda, label=None, value=None)
     """
-    positive_counts = []
-    negative_counts = []
-    neutral_counts = []
+
     total_counts = []
     total_pols = []
+    positive_pols = []
+    negative_pols = []
     for file in files:
         file_root = os.path.splitext(file)[0]
         print("File Name: {}".format(file_root))
-        polarity = get_sentiment(file)
-        positive_count = len(polarity["positive"]["data"])
-        negative_count = len(polarity["negative"]["data"])
-        neutral_count = len(polarity["neutral"]["data"])
-        total = positive_count + negative_count + neutral_count
-        positive_pol = polarity["positive"]["polarity"]
-        negative_pol = polarity["negative"]["polarity"]
-        neutral_pol = polarity["neutral"]["polarity"]
-        polaritys = positive_pol + negative_pol + neutral_pol
-        plt.hist(polaritys, bins=50)
-        plt.title("{}".format(file_root))
-        # plt.show()
-        #print("Positive comments : {} ".format(positive_count))
-        #print("Negative comments : {} ".format(negative_count))
-        #print("Neutral comments : {} ".format(neutral_count))
-        #print("Total : {} ".format(total))
-        positive_counts.append(positive_count)
-        negative_counts.append(negative_count)
-        neutral_counts.append(neutral_count)
-        total_counts.append(total)
-        total_pols += polaritys
+        df = get_data(file)
+        df = df.sort_index(ascending=False)
+        df = df.query('not date.str.endswith("ago")')
+        df["date"] = pd.to_datetime(df["date"], format="%d %b %Y")
+        df["date"] = df["date"].dt.date
+        maxdate = max(df["date"])
+        mindate = min(df["date"])
+        period = (maxdate - mindate).days
+        day = 30
+        t = []
+        positive_pers = []
+        negative_pers = []
+        neutral_pers = []
+        positive_counts = []
+        negative_counts = []
+        neutral_counts = []
+        total = []
+        for i in range(period//day+1):
+            start = mindate + timedelta(days=day) * (i)
+            tmp = start + timedelta(days=day)
+            if tmp > maxdate:
+                end = maxdate
+            else:
+                end = tmp
+            print("t = {}".format(i + 1))
+            t.append(i+1)
+            polarity = get_sentiment(df, start, end)
+            if pol:
+                positive_pol = polarity["positive"]["polarity"]
+                negative_pol = polarity["negative"]["polarity"]
+                neutral_pol = polarity["neutral"]["polarity"]
+                polaritys = positive_pol + negative_pol + neutral_pol
+                total_pols += polaritys
+                positive_pols += positive_pol
+                negative_pols += negative_pol
+            if hist:
+                plt.hist(polaritys, bins=50)
+                plt.title("{}".format(file_root))
+                plt.show()
+            if count:
+                positive_count = len(polarity["positive"]["data"])
+                negative_count = len(polarity["negative"]["data"])
+                neutral_count = len(polarity["neutral"]["data"])
+                positive_counts.append(positive_count)
+                negative_counts.append(negative_count)
+                neutral_counts.append(neutral_count)
+                total.append(positive_count + negative_count + neutral_count)
+                #print("Positive comments : {} ".format(positive_count))
+                #print("Negative comments : {} ".format(negative_count))
+                #print("Neutral comments : {} ".format(neutral_count))
+                #print("Total : {} ".format(total))
+                total_counts.append(
+                    [positive_count, negative_count, neutral_count])
+                positive_pers.append(polarity["positive"]["percentage"][0])
+                negative_pers.append(polarity["negative"]["percentage"][0])
+                neutral_pers.append(polarity["neutral"]["percentage"][0])
+        newdata = pd.DataFrame({'t': t, 'positive': positive_counts, 'negative': negative_counts, 'neutral': neutral_counts, 'total': total,
+                                'positive(%)': positive_pers, 'negative(%)': negative_pers, 'neutral(%)': neutral_pers})
+        newdata.to_csv("{}/newdata/new_{}.csv".format(local, file_root))
 
-    statisic = chisquare([sum(positive_counts), sum(negative_counts), sum(neutral_counts)], f_exp=[
-        sum(total_counts)*21.15/100, sum(total_counts)*21.62/100, sum(total_counts)*57.23/100])
-    print(statisic)
-    plt.hist(total_pols, bins=50)
-    plt.title("Total")
-    plt.show()
+    if sta:
+        t = np.sum(total_counts)
+        statisic = chisquare([sum(positive_counts), sum(negative_counts), sum(neutral_counts)], f_exp=[
+            t*21.15/100, t*21.62/100, t*57.23/100])
+        print(statisic)
+    if plot:
+        pl = Plot()
+        #x = np.sum(total_counts, axis=0)
+        x = [positive_count, negative_count, neutral_count]
+        pl.dirichlet(x)
+    if hist:
+        plt.hist(total_pols, bins=50)
+        plt.title("Total")
+        plt.show()
 
 
 if __name__ == "__main__":
