@@ -496,7 +496,7 @@ def main():
         maxdate = max(df["date"])
         mindate = min(df["date"])
         period = (maxdate - mindate).days
-        day = 30
+        day = 7
         t = []
         positive_pers = []
         negative_pers = []
@@ -545,7 +545,7 @@ def main():
                 negative_pers.append(polarity["negative"]["percentage"][0])
                 neutral_pers.append(polarity["neutral"]["percentage"][0])
         newdata = pd.DataFrame({'t': t, 'positive': positive_counts, 'negative': negative_counts, 'neutral': neutral_counts, 'total': total,
-                                'positive(%)': positive_pers, 'negative(%)': negative_pers, 'neutral(%)': neutral_pers})
+                                'positive_p': positive_pers, 'negative_p': negative_pers, 'neutral_p': neutral_pers})
         newdata.to_csv("{}/newdata/new_{}.csv".format(local, file_root))
 
     if sta:
