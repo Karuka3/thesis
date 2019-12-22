@@ -35,6 +35,19 @@ def main():
     x = [newdata['positive'][k], newdata['negative'][k], newdata['neutral'][k]]
     pl.dirichlet(x)
 
+    fig, ax = plt.subplots()
+    ax.set_xlabel("t")
+    ax.set_ylabel("Percentage")
+    ax.set_title("time and sentiment")
+    ax.grid()
+    ax.set_xlim([0, 50])
+    ax.plot(newdata['t'], newdata['positive(%)'], label="Positive")
+    ax.plot(newdata['t'], newdata['negative(%)'], label="Negative")
+    ax.plot(newdata['t'], newdata['neutral(%)'], label="Neutral")
+    ax.legend(loc=0)
+    fig.tight_layout()
+    plt.show()
+
 
 if __name__ == "__main__":
     main()

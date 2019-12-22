@@ -31,8 +31,8 @@ def text_preprocessing(text):
 
 def data_preprocessing(df, start=None, end=None):
     data = df.sort_index(ascending=False)
-    #data = df.query('not date.str.endswith("ago")')
-    #data["date"] = pd.to_datetime(data["date"], format="%d %b %Y")
+    # data = df.query('not date.str.endswith("ago")')
+    # data["date"] = pd.to_datetime(data["date"], format="%d %b %Y")
     if end:
         if start:
             data = data[(data.date >= start) & (data.date <= end)]
@@ -250,12 +250,12 @@ def get_sentiment(df, start=None, end=None):
             negative_pol = sum(negative["polarity"])/len(negative["polarity"])
         else:
             negative_pol = 0
-        positive_per = len(positive["data"]) / len(clean_text) * 100
-        negative_per = len(negative["data"]) / len(clean_text) * 100
-        neutral_per = len(neutral["data"]) / len(clean_text) * 100
-        print("Positive comments percentage: {} %".format(positive_per))
-        print("Negative comments percentage: {} %".format(negative_per))
-        print("Neutral comments percentage: {} %".format(neutral_per))
+        positive_per = len(positive["data"]) / len(clean_text)
+        negative_per = len(negative["data"]) / len(clean_text)
+        neutral_per = len(neutral["data"]) / len(clean_text)
+        print("Positive comments percentage: {} ".format(positive_per))
+        print("Negative comments percentage: {} ".format(negative_per))
+        print("Neutral comments percentage: {} ".format(neutral_per))
         print("Positive polaritys : {} ".format(positive_pol))
         print("Negative polaritys : {} ".format(negative_pol))
     else:
@@ -268,6 +268,10 @@ def get_sentiment(df, start=None, end=None):
     neutral["percentage"].append(neutral_per)
     polarity = {"positive": positive,
                 "negative": negative, "neutral": neutral}
+    print(len(positive["data"]) / 124249)
+    print(len(negative["data"]) / 124249)
+    print(len(neutral["data"]) / 124249)
+
     return polarity
 
 
@@ -465,12 +469,12 @@ def main():
     sentiment = True
     lda = False
     sta = False
-    plot = False
+    plot = True
     hist = False
     pol = False
     count = True
 
-    #file = "iPhone_comment.csv"
+    # file = "iPhone_comment.csv"
     """
     for file in files:
         if sentiment:
@@ -496,7 +500,7 @@ def main():
         maxdate = max(df["date"])
         mindate = min(df["date"])
         period = (maxdate - mindate).days
-        day = 7
+        day = 60
         t = []
         positive_pers = []
         negative_pers = []
@@ -535,18 +539,22 @@ def main():
                 negative_counts.append(negative_count)
                 neutral_counts.append(neutral_count)
                 total.append(positive_count + negative_count + neutral_count)
-                #print("Positive comments : {} ".format(positive_count))
-                #print("Negative comments : {} ".format(negative_count))
-                #print("Neutral comments : {} ".format(neutral_count))
-                #print("Total : {} ".format(total))
+                # print("Positive comments : {} ".format(positive_count))
+                # print("Negative comments : {} ".format(negative_count))
+                # print("Neutral comments : {} ".format(neutral_count))
+                # print("Total : {} ".format(total))
                 total_counts.append(
                     [positive_count, negative_count, neutral_count])
                 positive_pers.append(polarity["positive"]["percentage"][0])
                 negative_pers.append(polarity["negative"]["percentage"][0])
                 neutral_pers.append(polarity["neutral"]["percentage"][0])
+
         newdata = pd.DataFrame({'t': t, 'positive': positive_counts, 'negative': negative_counts, 'neutral': neutral_counts, 'total': total,
                                 'positive_p': positive_pers, 'negative_p': negative_pers, 'neutral_p': neutral_pers})
         newdata.to_csv("{}/newdata/new_{}.csv".format(local, file_root))
+
+        print(sum(newdata["negative"]) / sum(newdata["total"]))
+        print(sum(newdata["neutral"])/sum(newdata["total"]))
 
     if sta:
         t = np.sum(total_counts)
@@ -555,8 +563,8 @@ def main():
         print(statisic)
     if plot:
         pl = Plot()
-        #x = np.sum(total_counts, axis=0)
-        x = [positive_count, negative_count, neutral_count]
+        # x = np.sum(total_counts, axis=0)
+        x = np.sum(total_counts, axis=0)
         pl.dirichlet(x)
     if hist:
         plt.hist(total_pols, bins=50)
